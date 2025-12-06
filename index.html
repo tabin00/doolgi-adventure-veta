@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>둘기의 모험 (Verb Dungeon)</title>
+    <!-- [NEW] 폰트 변경: 가독성이 좋고 귀여운 'Jua'체 적용 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 기본 스타일 --- */
+        :root {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --accent-color: #d32f2f;
+            --ui-bg: rgba(30, 30, 30, 0.95);
+            --gold: #ffd700;
+            --easy-color: #4caf50;
+            --hard-color: #9c27b0;
+            --book-color: #f4e4bc;
+            --ink-color: #2c2c2c;
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body {
+            background-color: #000;
+            color: var(--text-color);
+            /* [NEW] 전체 폰트 변경: Jua */
+            font-family: 'Jua', sans-serif;
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden;
+            font-size: 1.1rem;
+        }
+
+        #app-container {
+            width: 100%; max-width: 480px; height: 100%;
+            background: var(--bg-color);
+            position: relative;
+            display: flex; flex-direction: column;
+            border-left: 1px solid #333; border-right: 1px solid #333;
+            overflow: hidden;
+        }
+
+        .screen {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            background-size: cover; background-position: center;
+            padding: 20px;
+        }
+
+        .active { display: flex; }
+
+        /* --- 시작 화면 --- */
+        #start-screen {
+            justify-content: center;
+            background-color: #111;
+            background-image: url('assets/bg_start.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .main-title { 
+            font-family: 'Jua', sans-serif;
+            font-size: 3.5rem; /* 크기 조정 */
+            color: var(--gold); margin: 0; text-align: center;
+            text-shadow: 
+                -2px -2px 0 #000,  
+                 2px -2px 0 #000,
+                -2px  2px 0 #000,
+                 2px  2px 0 #000,
+                 0 0 15px rgba(255, 215, 0, 0.5); 
+            line-height: 1.2;
+            letter-spacing: 2px;
+        }
+        
+        .pulse-btn {
+            padding: 15px 60px; font-size: 1.8rem;
+            background: var(--accent-color); color: white;
+            border: 3px solid white; border-radius: 50px; cursor: pointer;
+            animation: pulse 1.5s infinite; 
+            font-family: 'Jua', sans-serif;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            margin-top: 50px;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* --- 난이도 선택 --- */
+        #difficulty-screen { 
+            justify-content: center; 
+            background-color: #1a1a1d;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('assets/bg_start.png');
+            background-size: cover;
+            background-position: center;
+        }
+        .select-title { margin-bottom: 30px; font-size: 2rem; color: white; text-shadow: 2px 2px 4px black; }
+        .char-container { display: flex; gap: 20px; justify-content: center; width: 100%; margin-bottom: 40px; }
+        .char-card {
+            width: 45%; height: 280px;
+            background: rgba(44, 44, 44, 0.9);
+            border: 3px solid #555; border-radius: 15px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 10px; cursor: pointer; transition: transform 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .char-card:hover { transform: translateY(-5px); border-color: white; }
+        
+        .char-img-placeholder {
+            width: 110px; height: 110px; background: #444; margin-bottom: 20px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 3rem; border-radius: 50%; overflow: hidden;
+            border: 3px solid #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .char-img-placeholder img { width: 100%; height: 100%; object-fit: cover; }
+        .fallback-text { z-index: 0; color: #888; font-size: 2rem; }
+        
+        .easy-mode { border-color: var(--easy-color); }
+        .hard-mode { border-color: var(--hard-color); }
+        
+        .char-card h3 { font-size: 1.5rem; margin-top: 10px; color: white; }
+
+        .collection-btn {
+            background: rgba(0, 0, 0, 0.6); border: 2px solid var(--gold);
+            color: var(--gold); padding: 15px 40px; border-radius: 10px;
+            font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; gap: 10px;
+            font-family: 'Jua', sans-serif;
+        }
+        .collection-btn:hover { background: rgba(255, 215, 0, 0.2); }
+
+        /* --- 스테이지 선택 --- */
+        #stage-select-screen { 
+            justify-content: flex-start; background-color: #111; 
+            overflow-y: auto; padding-bottom: 50px;
+            -ms-overflow-style: none; scrollbar-width: none;
+        }
+        #stage-select-screen::-webkit-scrollbar { display: none; }
+        
+        .stage-grid {
+            display: flex; flex-direction: column-reverse; align-items: center;
+            width: 100%; max-width: 320px; gap: 60px;
+            margin-top: 40px; padding-bottom: 40px; position: relative;
+        }
+        .stage-grid::before {
+            content: ''; position: absolute; top: 20px; bottom: 20px; left: 50%;
+            width: 6px; background: #333; transform: translateX(-50%); z-index: 0; border-radius: 3px;
+        }
+        .stage-btn {
+            width: 120px; height: 120px; background: #222; border: 3px solid #555;
+            border-radius: 20px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; cursor: pointer;
+            color: #aaa; transition: all 0.2s; position: relative; z-index: 1;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .stage-btn:nth-child(odd) { align-self: flex-start; margin-left: 20px; }
+        .stage-btn:nth-child(even) { align-self: flex-end; margin-right: 20px; }
+        
+        .stage-btn:hover { border-color: white; color: white; background: #333; transform: scale(1.1); }
+        .stage-btn.cleared { border-color: var(--gold); color: var(--gold); background: #2a2a2a; box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+        .stage-btn.locked { border-color: #333; background: #1a1a1d; color: #444; cursor: pointer; }
+        .stage-verb { font-size: 1.5rem; margin-bottom: 5px; color:inherit;}
+
+        /* --- 도감 --- */
+        #collection-screen { background-color: #111; justify-content: flex-start; }
+        .collection-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+            width: 100%; margin-top: 20px; overflow-y: auto;
+        }
+        #collection-screen .collection-grid::-webkit-scrollbar { display: none; }
+        .card-slot {
+            aspect-ratio: 2/3; background: #222; border: 1px solid #444;
+            display: flex; justify-content: center; align-items: center;
+            color: #555; font-size: 0.9rem; flex-direction: column; text-align: center;
+            border-radius: 5px; position: relative; overflow: hidden;
+        }
+        .card-slot img { width: 90%; height: 60%; object-fit: contain; margin-bottom: 5px; z-index: 1; }
+        .card-slot.unlocked { background: linear-gradient(135deg, #2c2c2c, #1a1a1d); border: 2px solid gold; color: gold; box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.2); }
+        .back-btn { align-self: flex-start; background: none; border: none; color: white; font-size: 2.5rem; cursor: pointer; }
+
+        /* --- 게임 화면 --- */
+        #game-screen { padding: 0; }
+        .battle-field { 
+            flex-grow: 1; width: 100%;
+            display: flex; flex-direction: column; justify-content: space-between; 
+            padding: 20px; 
+            background-color: #222;
+            background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('assets/bg_battle.png');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        .status-bar { 
+            padding: 10px 15px; background: var(--ui-bg); width: 100%;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #444; font-size: 1.1rem;
+        }
+        .quit-btn { background: transparent; border: 1px solid #666; color: #aaa; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.9rem; font-family: inherit; }
+        .quit-btn:hover { background: #333; color: white; }
+
+        .monster-area, .hero-area { display: flex; flex-direction: column; align-items: center; position: relative; }
+        
+        .sprite { 
+            width: 150px; height: 150px; 
+            background: rgba(0,0,0,0.3); 
+            display: flex; justify-content: center; align-items: center; 
+            border-radius: 10px; margin: 10px 0; font-size: 3rem; overflow: hidden;
+            transition: all 0.5s ease;
+            position: relative;
+        }
+        .sprite img { width: 100%; height: 100%; object-fit: contain; position: absolute; z-index: 1; }
+        .sprite .fallback-icon { z-index: 0; }
+
+        .phase-2 .sprite { transform: scale(1.1); filter: drop-shadow(0 0 10px gold); }
+        .phase-3 .sprite { transform: scale(1.2); filter: drop-shadow(0 0 15px red); animation: angry-shake 2s infinite; }
+        
+        @keyframes angry-shake {
+            0% { transform: scale(1.2) rotate(0deg); }
+            2% { transform: scale(1.2) rotate(-2deg); }
+            4% { transform: scale(1.2) rotate(2deg); }
+            6% { transform: scale(1.2) rotate(0deg); }
+            100% { transform: scale(1.2) rotate(0deg); }
+        }
+
+        /* [NEW] 중앙 대사창 스타일 수정 (박스 제거, 글씨만 둥둥) */
+        .battle-message {
+            position: absolute;
+            top: 55%; left: 50%; /* 위치 미세 조정 */
+            transform: translate(-50%, -50%);
+            /* 배경 및 테두리 제거 */
+            background: none;
+            border: none;
+            box-shadow: none;
+            
+            color: #fff;
+            width: 100%;
+            text-align: center;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            
+            /* 글씨 강조 (두꺼운 테두리 효과) */
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-shadow: 
+                -2px -2px 0 #000,  
+                 2px -2px 0 #000,
+                -2px  2px 0 #000,
+                 2px  2px 0 #000,
+                 0 0 10px rgba(0,0,0,0.5);
+        }
+        .battle-message.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        .battle-message span { color: var(--gold); }
+
+        .hp-bar-container { width: 120px; height: 12px; background: #333; border-radius: 6px; overflow: hidden; border: 1px solid #555; }
+        .hp-fill { height: 100%; background: #f44336; transition: width 0.3s; }
+
+        .control-panel { background: var(--ui-bg); width: 100%; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        #q-area-wrapper { display: flex; flex-direction: column; align-items: center; margin-bottom: 5px; }
+        #tense-label { color: var(--gold); font-size: 1.2rem; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+        .hint-btn { background: none; border: none; cursor: pointer; font-size: 1.5rem; animation: float 2s infinite ease-in-out; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+        #q-text { text-align: center; line-height: 1.6; font-size: 1.4rem; width: 100%; word-break: keep-all; }
+        
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+        .option-btn { 
+            background: #333; border: 2px solid #555; color: white; 
+            padding: 15px 5px; border-radius: 10px; cursor: pointer; 
+            font-size: 1.2rem; font-family: inherit; transition: background 0.1s; 
+        }
+        .option-btn:active { background: #555; transform: scale(0.98); }
+        .option-btn:disabled { background: #222; color: #555; border-color: #333; cursor: not-allowed; transform: none; }
+        #feedback { text-align: center; height: 25px; color: gold; font-size: 1.1rem; font-weight: bold; }
+
+        /* --- 모달들 --- */
+        #custom-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #222; border: 2px solid var(--gold); padding: 30px; border-radius: 15px; text-align: center; width: 85%; max-width: 320px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        .modal-text { color: white; margin-bottom: 30px; line-height: 1.5; font-size: 1.3rem; }
+        .modal-btn-group { display: flex; justify-content: center; gap: 15px; }
+        .modal-btn { padding: 10px 30px; border-radius: 8px; cursor: pointer; border: none; font-weight: bold; font-family: inherit; font-size: 1.1rem; }
+        .btn-confirm { background: var(--accent-color); color: white; }
+        .btn-cancel { background: #555; color: white; }
+
+        #hint-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+        .book-container { width: 100%; max-width: 360px; background-color: var(--book-color); color: var(--ink-color); padding: 30px 20px; border-radius: 5px 15px 15px 5px; box-shadow: inset 10px 0 20px rgba(0,0,0,0.2), 10px 10px 30px rgba(0,0,0,0.5); position: relative; font-family: 'Courier New', serif; display: flex; flex-direction: column; border: 8px solid #5d4037; }
+        .book-close-btn { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 2rem; color: #8b0000; cursor: pointer; font-weight: bold; }
+        .book-title { text-align: center; font-size: 1.6rem; font-weight: bold; margin-bottom: 20px; border-bottom: 3px double #8b4513; padding-bottom: 10px; color: #8b4513; }
+        .book-section { margin-bottom: 20px; }
+        .book-label { font-weight: bold; color: #a0522d; font-size: 1.1rem; margin-bottom: 5px; }
+        .book-text { font-size: 1.1rem; line-height: 1.6; word-break: keep-all; font-family: 'Jua', sans-serif; }
+        .highlight { color: #d32f2f; font-weight: bold; background: rgba(255, 255, 0, 0.2); padding: 0 4px; border-radius: 4px;}
+
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <!-- 알림 모달 -->
+        <div id="custom-modal">
+            <div class="modal-content">
+                <p class="modal-text" id="modal-msg">알림 내용</p>
+                <div class="modal-btn-group" id="modal-btns">
+                    <button class="modal-btn btn-confirm">확인</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 힌트북 모달 -->
+        <div id="hint-modal">
+            <div class="book-container">
+                <button class="book-close-btn" onclick="closeHint()">✕</button>
+                <div class="book-title">Adventurer's Note</div>
+                <div class="book-section">
+                    <div class="book-label">📜 해석 (Translation)</div>
+                    <div class="book-text" id="hint-kor">...</div>
+                </div>
+                <div class="book-section">
+                    <div class="book-label">💡 공략 (Tip)</div>
+                    <div class="book-text" id="hint-desc">...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 시작 화면 -->
+        <div id="start-screen" class="screen active">
+            <h1 class="main-title">둘기's<br>ADVENTURE</h1>
+            <button class="pulse-btn" onclick="showScreen('difficulty-screen')">START</button>
+        </div>
+
+        <!-- 난이도 선택 -->
+        <div id="difficulty-screen" class="screen">
+            <h2 class="select-title">난이도 선택</h2>
+            <div class="char-container">
+                <div class="char-card easy-mode" onclick="selectDifficulty('easy')">
+                    <div class="char-img-placeholder" id="select-easy-img">
+                        <span class="fallback-text">🐣</span>
+                        <img src="assets/hero_easy.png" onload="this.style.display='block'; this.previousElementSibling.style.display='none';" onerror="this.style.display='none'; this.previousElementSibling.style.display='block';">
+                    </div>
+                    <h3>견습 기사</h3>
+                </div>
+                <div class="char-card hard-mode" onclick="selectDifficulty('hard')">
+                    <div class="char-img-placeholder" id="select-hard-img">
+                        <span class="fallback-text">🦅</span>
+                        <img src="assets/hero_hard.png" onload="this.style.display='block'; this.previousElementSibling.style.display='none';" onerror="this.style.display='none'; this.previousElementSibling.style.display='block';">
+                    </div>
+                    <h3>마스터</h3>
+                </div>
+            </div>
+            <button class="collection-btn" onclick="showScreen('collection-screen')">
+                <span>📖</span> 몬스터 도감
+            </button>
+        </div>
+
+        <!-- 스테이지 선택 -->
+        <div id="stage-select-screen" class="screen">
+            <div style="width:100%; display:flex; align-items:center;">
+                <button class="back-btn" onclick="showScreen('difficulty-screen')">←</button>
+                <h2 class="select-title" style="margin:0 auto 0 20px;">던전 선택</h2>
+            </div>
+            <div class="stage-grid" id="stage-grid"></div>
+        </div>
+
+        <!-- 도감 -->
+        <div id="collection-screen" class="screen">
+            <button class="back-btn" onclick="showScreen('difficulty-screen')">←</button>
+            <h2 style="color:var(--gold);">몬스터 도감</h2>
+            <div class="collection-grid" id="collection-grid"></div>
+        </div>
+
+        <!-- 게임 플레이 -->
+        <div id="game-screen" class="screen">
+            <div class="status-bar">
+                <button class="quit-btn" onclick="tryQuitGame()">🏳️ 포기</button>
+                <span id="stage-text">STAGE 1</span>
+                <span>LIFE: <span id="hero-hp-text">5</span></span>
+            </div>
+
+            <div class="battle-field" id="battle-bg">
+                <!-- [NEW] 말풍선 대신 중앙 대사창 -->
+                <div class="battle-message" id="battle-msg">대사가 여기에 나옵니다</div>
+
+                <div class="monster-area" id="monster-container">
+                    <div class="hp-bar-container"><div class="hp-fill" id="monster-hp-bar" style="width: 100%;"></div></div>
+                    
+                    <div class="sprite">
+                        <span class="fallback-icon" style="position: absolute; z-index: 0;">👾</span>
+                        <img id="game-monster-img" src="" alt="Monster" style="display:none;" 
+                             onload="this.style.display='block';" 
+                             onerror="this.style.display='none';">
+                    </div>
+                    
+                    <span id="monster-name" style="font-weight:bold;">Monster</span>
+                </div>
+                
+                <div class="hero-area">
+                    <span id="game-hero-name" style="font-size:0.8rem; margin-bottom:5px;">Hero</span>
+                    
+                    <div class="sprite">
+                         <span class="fallback-icon" style="position: absolute; z-index: 0;">⚔️</span>
+                         <img id="game-hero-img" src="" alt="Hero" style="display:none;" 
+                              onload="this.style.display='block';" 
+                              onerror="this.style.display='none';">
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <div id="q-area-wrapper">
+                    <div id="tense-label">
+                        <span id="tense-text">현재</span>
+                    </div>
+                    <div id="q-text">문제 로딩중...</div>
+                </div>
+                <div id="options-area" class="options-grid"></div>
+                <div id="feedback"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- 1. 유틸리티 & 모달 --- */
+        const modal = document.getElementById('custom-modal');
+        const modalMsg = document.getElementById('modal-msg');
+        const modalBtns = document.getElementById('modal-btns');
+
+        function showAlert(msg, callback) {
+            modalMsg.innerText = msg;
+            modalBtns.innerHTML = `<button class="modal-btn btn-confirm" id="modal-ok-btn">확인</button>`;
+            modal.style.display = 'flex';
+            document.getElementById('modal-ok-btn').onclick = function() {
+                modal.style.display = 'none';
+                if(callback) callback();
+            };
+        }
+
+        function showConfirm(msg, yesCallback) {
+            modalMsg.innerText = msg;
+            modalBtns.innerHTML = `
+                <button class="modal-btn btn-cancel" id="modal-no-btn">취소</button>
+                <button class="modal-btn btn-confirm" id="modal-yes-btn">확인</button>
+            `;
+            modal.style.display = 'flex';
+            document.getElementById('modal-yes-btn').onclick = function() {
+                modal.style.display = 'none';
+                if(yesCallback) yesCallback();
+            };
+            document.getElementById('modal-no-btn').onclick = function() {
+                modal.style.display = 'none';
+            };
+        }
+        
+        const hintModal = document.getElementById('hint-modal');
+        function showHint(kor, desc) {
+            document.getElementById('hint-kor').innerText = kor;
+            document.getElementById('hint-desc').innerHTML = desc; 
+            hintModal.style.display = 'flex';
+        }
+        function closeHint() { hintModal.style.display = 'none'; }
+
+        /* --- 2. 게임 데이터 --- */
+        const verbs = [
+            { word: "see", forms: ["see", "saw", "seen", "seeing", "sees"], monster: "Cyclops", dialogues: ["너를 지켜보고 있다...", "내 시야가 넓어진다!", "어딜 숨으려고!!"] },
+            { word: "eat", forms: ["eat", "ate", "eaten", "eating", "eats"], monster: "Ogre", dialogues: ["배가 고프군...", "더 많은 고기가 필요해!", "뼈까지 씹어주마!"] },
+            { word: "do", forms: ["do", "did", "done", "doing", "does"], monster: "Golem", dialogues: ["명령을 수행한다.", "전투 모드 가동.", "시스템 과부하! 파괴!"] },
+            { word: "bring", forms: ["bring", "brought", "bringing", "brings"], monster: "Bat", dialogues: ["선물을 가져왔지...", "피를 바쳐라!", "어둠이 너를 덮친다!"] },
+            { word: "feel", forms: ["feel", "felt", "feeling", "feels"], monster: "Ghost", dialogues: ["한기가 느껴지느냐...", "공포에 떨어라!", "영혼을 얼려주마!"] },
+            { word: "get", forms: ["get", "got", "gotten", "getting", "gets"], monster: "Thief", dialogues: ["가진 걸 다 내놔.", "운이 좋군...", "네 목숨을 훔치겠다!"] },
+            { word: "say", forms: ["say", "said", "saying", "says"], monster: "Parrot", dialogues: ["따라해봐 깍!", "목소리가 작다!", "비명이나 질러라!!"] },
+            { word: "look", forms: ["look", "looked", "looking", "looks"], monster: "Watcher", dialogues: ["어딜 보는 거냐.", "내 눈을 피할 순 없다.", "심연을 보아라!"] },
+            { word: "want", forms: ["want", "wanted", "wanting", "wants"], monster: "Mimic", dialogues: ["원해... 더 원해...", "탐욕이 끓어오른다!", "너의 모든 걸 내놔!"] }
+        ];
+
+        const highlight = (text) => `<span class="highlight">${text}</span>`;
+        function generateQuestions(verbObj) {
+            const v = verbObj.word;
+            const f = verbObj.forms; 
+            const p = (v === 'be') ? 'was/were' : f[1]; 
+            const pp = f[2];
+            const ing = f[3];
+            
+            return [
+                { t: "과거", q: `I ____ him yesterday.`, a: p, kor: `나는 어제 그를 보았다.`, desc: `${highlight('yesterday')}는 과거 시점입니다. 과거형 ${highlight(p)}가 정답.` },
+                { t: "현재", q: `I usually ____ it every day.`, a: v, kor: `나는 보통 매일 그것을 한다.`, desc: `${highlight('usually')}는 습관을 나타냅니다. 현재형 ${highlight(v)} 사용.` },
+                { t: "미래", q: `I will ____ you later.`, a: v, kor: `나중에 할 것이다.`, desc: `조동사 ${highlight('will')} 뒤에는 원형 ${highlight(v)}가 옵니다.` },
+                { t: "과거진행", q: `I was ____ when you called.`, a: ing, kor: `전화했을 때 ~하는 중이었다.`, desc: `과거 진행 중인 동작. 'was + ${highlight('ing')}'` },
+                { t: "현재진행", q: `Look! He is ____ now.`, a: ing, kor: `지금 ~하고 있다.`, desc: `현재 진행 중. 'is + ${highlight('ing')}'` },
+                { t: "미래진행", q: `I will be ____ at 8 PM.`, a: ing, kor: `8시에 ~하고 있을 것이다.`, desc: `미래 진행. 'will be + ${highlight('ing')}'` },
+                { t: "과거완료", q: `He had ____ before I arrived.`, a: pp, kor: `도착 전에 이미 ~했었다.`, desc: `대과거. 'had + ${highlight('p.p')}'` },
+                { t: "현재완료", q: `I have just ____ lunch.`, a: pp, kor: `방금 ~했다.`, desc: `완료. 'have + ${highlight('p.p')}'` },
+                { t: "미래완료", q: `I will have ____ by tomorrow.`, a: pp, kor: `내일이면 ~했을 것이다.`, desc: `미래 완료. 'will have + ${highlight('p.p')}'` },
+                { t: "과거완료진행", q: `I had been ____ for 2 hours.`, a: ing, kor: `2시간 동안 ~했었다.`, desc: `과거 완료 진행. 'had been + ${highlight('ing')}'` },
+                { t: "현재완료진행", q: `I have been ____ since morning.`, a: ing, kor: `아침부터 ~해오고 있다.`, desc: `현재 완료 진행. 'have been + ${highlight('ing')}'` },
+                { t: "미래완료진행", q: `I will have been ____ for a year.`, a: ing, kor: `1년째 ~하는 셈일 것이다.`, desc: `미래 완료 진행. 'will have been + ${highlight('ing')}'` }
+            ];
+        }
+
+        const gameData = verbs.map((v, idx) => ({
+            id: idx,
+            verb: v.word,
+            monsterName: v.monster,
+            dialogues: v.dialogues,
+            forms: v.forms,
+            hp: 120, 
+            questions: generateQuestions(v)
+        }));
+
+        /* --- 3. 상태 변수 --- */
+        let gameState = {
+            mode: 'easy',       
+            selectedStageId: 0, 
+            qList: [],          
+            qIndex: 0,
+            mMaxHP: 120, mCurHP: 120,
+            heroLives: 5,
+            currentPhase: 1, 
+            clearedStages: { easy: [], hard: [] }
+        };
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if(screenId === 'stage-select-screen') renderStageGrid();
+            if(screenId === 'collection-screen') renderCollection();
+        }
+
+        function selectDifficulty(mode) {
+            gameState.mode = mode;
+            showScreen('stage-select-screen');
+        }
+
+        /* --- 스테이지 렌더링 (수정: 클릭 반응 및 스크롤) --- */
+        function renderStageGrid() {
+            const grid = document.getElementById('stage-grid');
+            grid.innerHTML = "";
+            const currentCleared = gameState.clearedStages[gameState.mode];
+            let firstUnlockedBtn = null; // 자동 스크롤을 위한 타겟
+
+            gameData.forEach(stage => {
+                const btn = document.createElement('div');
+                const isCleared = currentCleared.includes(stage.id);
+                const isUnlocked = stage.id === 0 || currentCleared.includes(stage.id - 1);
+                
+                let btnClass = 'stage-btn';
+                if (isCleared) btnClass += ' cleared';
+                if (!isUnlocked) btnClass += ' locked';
+                btn.className = btnClass;
+                
+                if (isUnlocked) {
+                    btn.onclick = () => startGame(stage.id);
+                    btn.innerHTML = `<div class="stage-verb">${stage.verb.toUpperCase()}</div><div class="stage-monster">${stage.monsterName}</div>${isCleared ? '<div>⭐ Clear</div>' : ''}`;
+                    if(!firstUnlockedBtn) firstUnlockedBtn = btn; // 가장 낮은 단계의 해금 버튼 저장 (역순이라 덮어씌워짐)
+                    firstUnlockedBtn = btn; // 계속 갱신하여 가장 높은(화면상 위쪽) 해금 버튼을 찾거나, 아래쪽을 찾거나..
+                    // 탑 쌓기니까 아래(id 0)부터 위로 감. 
+                    // id 0이 해금 -> id 1 잠김.
+                    // 스크롤은 아래(id 0)가 보이게 해야 함.
+                } else {
+                    // 잠긴 버튼 클릭 시 안내 메시지
+                    btn.onclick = () => showAlert(`🔒 Locked\n이전 층(${gameData[stage.id-1].verb})을 먼저 클리어하세요!`);
+                    btn.innerHTML = `<div style="font-size:1.5rem">🔒</div><div class="stage-verb">???</div>`;
+                }
+                grid.appendChild(btn);
+            });
+            
+            // [중요] 스크롤을 맨 아래(1층)로 이동
+            setTimeout(() => { 
+                const screen = document.getElementById('stage-select-screen');
+                screen.scrollTop = screen.scrollHeight; 
+            }, 100);
+        }
+
+        /* --- 게임 시작 --- */
+        function startGame(stageId) {
+            gameState.selectedStageId = stageId;
+            const data = gameData[stageId];
+            
+            gameState.heroLives = (gameState.mode === 'easy') ? 5 : 3;
+            gameState.qList = [...data.questions].sort(() => Math.random() - 0.5);
+            gameState.qIndex = 0;
+            gameState.mMaxHP = 120;
+            gameState.mCurHP = 120;
+            gameState.currentPhase = 1;
+            
+            const monsterContainer = document.getElementById('monster-container');
+            monsterContainer.className = 'monster-area';
+
+            // 이미지 로드 시 에러 방지 (src 설정 전 display 초기화 안함 - onload/onerror가 처리)
+            const heroImgSrc = (gameState.mode === 'easy') ? "assets/hero_easy.png" : "assets/hero_hard.png";
+            document.getElementById('game-hero-img').src = heroImgSrc;
+
+            const monsterImgTag = document.getElementById('game-monster-img');
+            monsterImgTag.src = `assets/mob_${data.verb}_1.png`;
+
+            document.getElementById('stage-text').innerText = `STAGE: ${data.verb.toUpperCase()}`;
+            document.getElementById('monster-name').innerText = data.monsterName;
+            
+            showScreen('game-screen');
+            updateUI();
+            showSpeech(data.dialogues[0]);
+            loadQuestion();
+        }
+
+        /* --- 페이즈 업데이트 --- */
+        function updatePhase() {
+            const nextQIndex = gameState.qIndex; 
+            const monsterContainer = document.getElementById('monster-container');
+            const data = gameData[gameState.selectedStageId];
+            const monsterImgTag = document.getElementById('game-monster-img');
+
+            if (nextQIndex === 4) { 
+                gameState.currentPhase = 2;
+                monsterContainer.classList.add('phase-2');
+                monsterImgTag.src = `assets/mob_${data.verb}_2.png`;
+                showSpeech(data.dialogues[1]);
+            } else if (nextQIndex === 8) { 
+                gameState.currentPhase = 3;
+                monsterContainer.classList.add('phase-3');
+                monsterImgTag.src = `assets/mob_${data.verb}_3.png`;
+                showSpeech(data.dialogues[2]);
+            }
+        }
+
+        function showSpeech(text) {
+            const bubble = document.getElementById('battle-msg'); // [수정] 말풍선 대신 중앙 메시지창 사용
+            bubble.innerHTML = `<span>${text}</span>`;
+            bubble.classList.add('show');
+            setTimeout(() => { bubble.classList.remove('show'); }, 3000);
+        }
+
+        function getDistractors(correctAnswer) {
+            const data = gameData[gameState.selectedStageId];
+            let forms = data.forms.filter(f => f.toLowerCase() !== correctAnswer.toLowerCase());
+            while(forms.length < 3) forms.push("dummy");
+            forms.sort(() => Math.random() - 0.5);
+            return forms.slice(0, 3);
+        }
+
+        function loadQuestion() {
+            if (gameState.qIndex >= gameState.qList.length) {
+                stageClear();
+                return;
+            }
+            updatePhase();
+
+            const q = gameState.qList[gameState.qIndex];
+            const tenseLabel = document.getElementById('tense-label');
+            tenseLabel.innerHTML = `<span id="tense-text">[${q.t}]</span>`;
+            
+            if (gameState.mode === 'easy') {
+                const hintBtn = document.createElement('button');
+                hintBtn.className = 'hint-btn';
+                hintBtn.innerHTML = '📖';
+                hintBtn.onclick = () => showHint(q.kor, q.desc);
+                tenseLabel.appendChild(hintBtn);
+            }
+
+            document.getElementById('q-text').innerHTML = `${q.q}`;
+            document.getElementById('feedback').innerText = "";
+
+            const optionsArea = document.getElementById('options-area');
+            optionsArea.innerHTML = "";
+
+            const correct = q.a;
+            const distractors = getDistractors(correct);
+            const options = [correct, ...distractors];
+            options.sort(() => Math.random() - 0.5);
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = (e) => checkAnswer(opt, e.target); 
+                optionsArea.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedInput, btnElement) {
+            const currentQ = gameState.qList[gameState.qIndex];
+            const correct = currentQ.a;
+
+            if (selectedInput.toLowerCase() === correct.toLowerCase()) {
+                gameState.mCurHP -= 10;
+                document.getElementById('feedback').innerText = "HIT!";
+                document.getElementById('feedback').style.color = "#4caf50";
+                updateUI();
+                
+                if (gameState.mCurHP <= 0) {
+                    stageClear();
+                } else {
+                    gameState.qIndex++;
+                    setTimeout(loadQuestion, 800);
+                }
+            } else {
+                gameState.heroLives--;
+                document.getElementById('feedback').innerText = "MISS! (버튼 파괴됨)";
+                document.getElementById('feedback').style.color = "#f44336";
+                btnElement.disabled = true;
+                btnElement.style.opacity = "0.5";
+                updateUI();
+
+                if (gameState.heroLives <= 0) {
+                    setTimeout(() => {
+                        showAlert("모든 라이프가 소진되었습니다. 마을로 귀환합니다.", function() {
+                            showScreen('stage-select-screen');
+                        });
+                    }, 500);
+                }
+            }
+        }
+
+        function stageClear() {
+            setTimeout(() => {
+                showAlert(`${gameData[gameState.selectedStageId].monsterName} 토벌 완료!`, function() {
+                    if(!gameState.clearedStages[gameState.mode].includes(gameState.selectedStageId)) {
+                        gameState.clearedStages[gameState.mode].push(gameState.selectedStageId);
+                    }
+                    showScreen('stage-select-screen');
+                });
+            }, 300);
+        }
+
+        function updateUI() {
+            const maxHP = 120;
+            const percent = Math.max(0, (gameState.mCurHP / maxHP) * 100);
+            document.getElementById('monster-hp-bar').style.width = `${percent}%`;
+            document.getElementById('hero-hp-text').innerText = gameState.heroLives;
+        }
+
+        function tryQuitGame() {
+            showConfirm("던전을 포기하고 나가시겠습니까?", function() {
+                showScreen('stage-select-screen');
+            });
+        }
+
+        function renderCollection() {
+            const grid = document.getElementById('collection-grid');
+            grid.innerHTML = "";
+            const currentCleared = gameState.clearedStages[gameState.mode];
+            gameData.forEach(stage => {
+                const isUnlocked = currentCleared.includes(stage.id);
+                const slot = document.createElement('div');
+                slot.className = `card-slot ${isUnlocked ? 'unlocked' : ''}`;
+                
+                if (isUnlocked) {
+                    slot.innerHTML = `
+                        <img src="assets/mob_${stage.verb}_1.png" onerror="this.style.display='none';">
+                        <h3 style="margin:5px">${stage.verb.toUpperCase()}</h3>
+                        <p>${stage.monsterName}</p>
+                    `;
+                } else {
+                    slot.innerHTML = `<div style="font-size:1.5rem">🔒</div><br>${stage.verb}`;
+                }
+                grid.appendChild(slot);
+            });
+        }
+    </script>
+</body>
+</html>
