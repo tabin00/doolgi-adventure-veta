@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>둘기의 모험 (Verb Dungeon)</title>
-    <!-- 폰트: Jua -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
@@ -108,8 +107,7 @@
             width: 110px; height: 110px; background: #444; margin-bottom: 20px;
             display: flex; justify-content: center; align-items: center;
             font-size: 3rem; border-radius: 50%; overflow: hidden;
-            border: 3px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            position: relative;
+            border: 2px solid #666; position: relative;
         }
         .char-img-placeholder img { width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; }
         .fallback-text { z-index: 0; color: #888; font-size: 2rem; }
@@ -156,35 +154,68 @@
         .stage-btn.locked { border-color: #333; background: #1a1a1d; color: #444; cursor: pointer; }
         .stage-verb { font-size: 1.5rem; margin-bottom: 5px; color:inherit;}
 
-        /* [NEW] 개발자용 버튼 스타일 */
         .dev-btn {
             margin-top: 30px; margin-bottom: 20px;
             background: #222; color: #00ffff;
             border: 1px dashed #00ffff;
             padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.9rem;
-            opacity: 0.7;
+            border-radius: 5px; cursor: pointer; font-family: inherit; font-size: 0.9rem; opacity: 0.7;
         }
         .dev-btn:hover { opacity: 1; background: #333; }
 
-        /* --- 도감 --- */
-        #collection-screen { background-color: #111; justify-content: flex-start; }
+        /* --- 도감 화면 --- */
+        #collection-screen { 
+            justify-content: center; align-items: center;     
+            background-color: #1a1a1d; padding: 0; 
+        }
+
+        #collection-bg-wrapper {
+            width: 100%; height: 100%; 
+            background-image: url('assets/bg_book.png');
+            background-size: 100% 100%; 
+            background-position: center; background-repeat: no-repeat;
+            position: relative; 
+        }
+
         .collection-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-            width: 100%; margin-top: 20px; overflow-y: auto;
+            position: absolute;
+            top: 21.7%; left: 12%; width: 76.6%; height: 58%;
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            grid-template-rows: repeat(3, 1fr);
+            gap: 3.4%; margin: 0;
+            border: none; z-index: 10;
         }
+
         .card-slot {
-            aspect-ratio: 2/3; background: #222; border: 1px solid #444;
+            background: transparent; border: none; 
             display: flex; justify-content: center; align-items: center;
-            color: #555; font-size: 0.9rem; flex-direction: column; text-align: center;
-            border-radius: 5px; position: relative; overflow: hidden;
+            position: relative; overflow: hidden; border-radius: 4px;
         }
-        .card-slot img { width: 90%; height: 60%; object-fit: contain; margin-bottom: 5px; z-index: 1; }
-        .card-slot.unlocked { background: linear-gradient(135deg, #2c2c2c, #1a1a1d); border: 2px solid gold; color: gold; box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.2); }
-        .back-btn { align-self: flex-start; background: none; border: none; color: white; font-size: 2.5rem; cursor: pointer; }
+        
+        .card-slot img { 
+            width: 100%; height: 100%; object-fit: fill; 
+            transition: all 0.3s;
+        }
+
+        /* [NEW] 이지 모드 클리어 시 흐림 효과 클래스 추가 */
+        .card-slot.easy-clear img {
+            filter: brightness(0.7) grayscale(0.3);
+        }
+
+        /* 찢어진 효과 (자바스크립트에서 동적으로 clip-path 주입 예정) */
+        /* 기본적으로 완전체는 효과 없음 */
+        .card-full img {
+            clip-path: none;
+            filter: none; /* 완전체는 필터 제거 */
+            box-shadow: 0 0 10px gold;
+        }
+        
+        .back-btn { 
+            position: absolute; top: 20px; left: 20px; 
+            background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px;
+            border: 1px solid white; color: white; font-size: 1.5rem; cursor: pointer; z-index: 100;
+        }
 
         /* --- 게임 화면 --- */
         #game-screen { padding: 0; overflow: hidden; }
@@ -357,15 +388,16 @@
                 <h2 class="select-title" style="margin:0 auto 0 20px;">던전 선택</h2>
             </div>
             <div class="stage-grid" id="stage-grid"></div>
-            <!-- [NEW] 개발자용 전체 해금 버튼 -->
+            <!-- 개발자용 전체 해금 버튼 -->
             <button class="dev-btn" onclick="unlockAllStages()">🔓 개발자: 전체 해금 (Unlock All)</button>
         </div>
 
-        <!-- 도감 -->
+        <!-- 도감 (책 배경 적용) -->
         <div id="collection-screen" class="screen">
             <button class="back-btn" onclick="showScreen('difficulty-screen')">←</button>
-            <h2 style="color:var(--gold);">몬스터 도감</h2>
-            <div class="collection-grid" id="collection-grid"></div>
+            <div id="collection-bg-wrapper">
+                <div class="collection-grid" id="collection-grid"></div>
+            </div>
         </div>
 
         <!-- 게임 플레이 -->
@@ -455,11 +487,10 @@
         }
         function closeHint() { hintModal.style.display = 'none'; }
 
-        /* [NEW] 개발자용 치트키: 전체 해금 */
+        /* 개발자용 치트키 */
         function unlockAllStages() {
-            // 현재 모드의 클리어 목록에 0~8까지 모든 ID 추가
             gameState.clearedStages[gameState.mode] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-            renderStageGrid(); // 화면 갱신
+            renderStageGrid();
             showAlert("개발자 모드: 모든 스테이지가 해금되었습니다!");
         }
 
@@ -868,6 +899,7 @@
             setTimeout(() => {
                 const data = verbsData[gameState.selectedStageId];
                 showAlert(`${data.monster} 토벌 완료!`, function() {
+                    // 현재 난이도에 클리어 기록 추가
                     if(!gameState.clearedStages[gameState.mode].includes(gameState.selectedStageId)) {
                         gameState.clearedStages[gameState.mode].push(gameState.selectedStageId);
                     }
@@ -889,24 +921,98 @@
             });
         }
 
+        /* [수정] 도감 렌더링 로직 (더 디테일하고 불규칙한 찢기 + 이지모드 흐림 효과) */
+        // 찢는 스타일 정의 (약 1/3 영역만 남기는 폴리곤, 더 많은 점으로 디테일 강화)
+        const tornStyles = [
+            // 1. 왼쪽 위 1/3 (대각선 지그재그 - 디테일 강화)
+            { 
+                easy: "polygon(0% 0%, 45% 0%, 43% 5%, 46% 12%, 40% 18%, 45% 25%, 37% 32%, 42% 40%, 34% 48%, 39% 55%, 30% 62%, 36% 70%, 27% 78%, 33% 85%, 24% 92%, 28% 100%, 0% 100%)", 
+                hard: "polygon(45% 0%, 100% 0%, 100% 100%, 28% 100%, 24% 92%, 33% 85%, 27% 78%, 36% 70%, 30% 62%, 39% 55%, 34% 48%, 42% 40%, 37% 32%, 45% 25%, 40% 18%, 46% 12%, 43% 5%)" 
+            },
+            // 2. 하단 1/3 (수평 지그재그 - 디테일 강화)
+            { 
+                easy: "polygon(0% 65%, 5% 63%, 12% 67%, 18% 61%, 25% 66%, 32% 59%, 40% 65%, 48% 58%, 55% 64%, 62% 57%, 70% 63%, 78% 56%, 85% 62%, 92% 55%, 100% 60%, 100% 100%, 0% 100%)", 
+                hard: "polygon(0% 0%, 100% 0%, 100% 60%, 92% 55%, 85% 62%, 78% 56%, 70% 63%, 62% 57%, 55% 64%, 48% 58%, 40% 65%, 32% 59%, 25% 66%, 18% 61%, 12% 67%, 5% 63%, 0% 65%)" 
+            },
+            // 3. 오른쪽 1/3 (수직 지그재그 - 디테일 강화)
+            { 
+                easy: "polygon(65% 0%, 67% 8%, 63% 15%, 68% 23%, 62% 30%, 69% 38%, 61% 45%, 68% 53%, 60% 60%, 67% 68%, 59% 75%, 66% 83%, 58% 90%, 65% 97%, 100% 100%, 100% 0%)", 
+                hard: "polygon(0% 0%, 65% 0%, 67% 8%, 63% 15%, 68% 23%, 62% 30%, 69% 38%, 61% 45%, 68% 53%, 60% 60%, 67% 68%, 59% 75%, 66% 83%, 58% 90%, 65% 97%, 60% 100%, 0% 100%)" 
+            },
+            // 4. 왼쪽 아래 (삼각형 지그재그 - 디테일 강화)
+            { 
+                easy: "polygon(0% 0%, 0% 100%, 70% 100%, 66% 94%, 58% 88%, 62% 80%, 50% 72%, 55% 64%, 42% 56%, 48% 48%, 35% 40%, 40% 32%, 25% 24%, 30% 16%, 15% 8%)", 
+                hard: "polygon(0% 0%, 15% 8%, 30% 16%, 25% 24%, 40% 32%, 35% 40%, 48% 48%, 42% 56%, 55% 64%, 50% 72%, 62% 80%, 58% 88%, 66% 94%, 70% 100%, 100% 100%, 100% 0%)" 
+            },
+            // 5. 위쪽 1/3 (불규칙 지그재그 - 디테일 강화)
+            { 
+                easy: "polygon(0% 0%, 100% 0%, 100% 35%, 94% 30%, 88% 38%, 82% 26%, 75% 35%, 68% 28%, 60% 38%, 52% 25%, 45% 34%, 38% 22%, 30% 32%, 22% 20%, 15% 30%, 8% 18%, 0% 35%)", 
+                hard: "polygon(0% 35%, 8% 18%, 15% 30%, 22% 20%, 30% 32%, 38% 22%, 45% 34%, 52% 25%, 60% 38%, 68% 28%, 75% 35%, 82% 26%, 88% 38%, 94% 30%, 100% 35%, 100% 100%, 0% 100%)" 
+            },
+            // 6. 오른쪽 위 (둥근 찢김 - 디테일 강화)
+            { 
+                easy: "polygon(40% 0%, 100% 0%, 100% 60%, 94% 56%, 88% 62%, 82% 54%, 75% 58%, 68% 48%, 60% 54%, 55% 44%, 50% 52%, 45% 38%, 52% 30%, 40% 24%, 48% 16%, 40% 8%)", 
+                hard: "polygon(0% 0%, 40% 0%, 40% 8%, 48% 16%, 40% 24%, 52% 30%, 45% 38%, 50% 52%, 55% 44%, 60% 54%, 68% 48%, 75% 58%, 82% 54%, 88% 62%, 94% 56%, 100% 60%, 100% 100%, 0% 100%)" 
+            },
+            // 7. 왼쪽 1/3 (심한 요철 - 디테일 강화)
+            { 
+                easy: "polygon(0% 0%, 35% 0%, 32% 10%, 38% 22%, 30% 35%, 40% 48%, 28% 60%, 36% 72%, 30% 85%, 38% 94%, 25% 100%, 0% 100%)", 
+                hard: "polygon(35% 0%, 100% 0%, 100% 100%, 25% 100%, 38% 94%, 30% 85%, 36% 72%, 28% 60%, 40% 48%, 30% 35%, 38% 22%, 32% 10%)" 
+            },
+            // 8. 중앙 띠 (양옆 찢김 - 디테일 강화, 이지는 왼쪽 40%)
+            { 
+                easy: "polygon(0% 0%, 40% 0%, 36% 8%, 44% 16%, 35% 25%, 42% 34%, 34% 44%, 40% 55%, 32% 65%, 42% 75%, 34% 84%, 40% 92%, 35% 100%, 0% 100%)", 
+                hard: "polygon(40% 0%, 100% 0%, 100% 100%, 35% 100%, 40% 92%, 34% 84%, 42% 75%, 32% 65%, 40% 55%, 34% 44%, 42% 34%, 35% 25%, 44% 16%, 36% 8%)" 
+            },
+             // 9. 역대각선 (오른쪽 위 - 디테일 강화)
+            { 
+                easy: "polygon(100% 0%, 100% 100%, 60% 100%, 64% 92%, 56% 84%, 62% 75%, 54% 65%, 60% 55%, 52% 44%, 62% 34%, 55% 25%, 64% 16%, 60% 8%)", 
+                hard: "polygon(0% 0%, 60% 8%, 64% 16%, 55% 25%, 62% 34%, 52% 44%, 60% 55%, 54% 65%, 62% 75%, 56% 84%, 64% 92%, 60% 100%, 0% 100%)" 
+            }
+        ];
+
         function renderCollection() {
             const grid = document.getElementById('collection-grid');
             grid.innerHTML = "";
-            const currentCleared = gameState.clearedStages[gameState.mode];
+            
+            const easyList = gameState.clearedStages.easy;
+            const hardList = gameState.clearedStages.hard;
+
             verbsData.forEach((stage, idx) => {
-                const isUnlocked = currentCleared.includes(idx);
-                const slot = document.createElement('div');
-                slot.className = `card-slot ${isUnlocked ? 'unlocked' : ''}`;
+                const isEasyCleared = easyList.includes(idx);
+                const isHardCleared = hardList.includes(idx);
                 
-                if (isUnlocked) {
-                    slot.innerHTML = `
-                        <img src="assets/mob_${stage.word}_1.png" onerror="this.style.display='none';">
-                        <h3 style="margin:5px">${stage.word.toUpperCase()}</h3>
-                        <p>${stage.monster}</p>
-                    `;
+                const slot = document.createElement('div');
+                slot.className = 'card-slot';
+                
+                // 카드 이미지 태그 생성
+                const imgTag = document.createElement('img');
+                imgTag.src = `assets/card_${stage.word}.png`;
+                imgTag.onerror = function() { this.style.display = 'none'; };
+                
+                // 스타일 결정 (인덱스에 따라 다른 찢김 모양 적용)
+                const style = tornStyles[idx % tornStyles.length];
+
+                if (isEasyCleared && isHardCleared) {
+                    // 완전체
+                    slot.classList.add('unlocked', 'card-full');
+                    imgTag.style.clipPath = 'none';
+                    slot.appendChild(imgTag);
+                } else if (isEasyCleared) {
+                    // 이지 클리어 (1/3 조각) + 흐림 효과 추가
+                    slot.classList.add('unlocked', 'easy-clear'); // easy-clear 클래스 추가
+                    imgTag.style.clipPath = style.easy;
+                    slot.appendChild(imgTag);
+                } else if (isHardCleared) {
+                    // 하드 클리어 (나머지 조각 - 2/3)
+                    slot.classList.add('unlocked');
+                    imgTag.style.clipPath = style.hard;
+                    slot.appendChild(imgTag);
                 } else {
-                    slot.innerHTML = `<div style="font-size:1.5rem">🔒</div><br>${stage.word}`;
+                    // 미해금
+                    slot.classList.add('locked');
                 }
+                
                 grid.appendChild(slot);
             });
         }
